@@ -1,6 +1,6 @@
 [project]
 name = "keyspec"
-version = "0.1.0"
+dynamic = ["version"]
 description = "a simplistic asynchronous memory cache library for use with msgspec dataclasses"
 readme = "README.md"
 authors = [

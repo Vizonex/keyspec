@@ -16,7 +16,7 @@ factory = cache(
 
 
 @factory
-async def instert(client: Client[User], username: str, password: str) -> None:
+async def insert(client: Client[User], username: str, password: str) -> None:
     await client.set(username, User(username, password))
 
 
@@ -35,8 +35,8 @@ async def wipe(client: Client[User]) -> None:
 
 @pytest.mark.anyio
 async def test_example() -> None:
-    await instert("user", "pass")
-    await instert("user1", "password")
+    await insert("user", "pass")
+    await insert("user1", "password")
     data = await get_all()
 
     assert data['user'] == User(name='user', password='pass')

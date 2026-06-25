@@ -252,8 +252,9 @@ class Client(AsyncContextManagerMixin, Generic[T]):
     async def __asynccontextmanager__(self) -> AsyncIterator[Self]:
         async with await connect(**self._config) as conn:
             self._db = conn
-            await self._db.execute_one(self.KEY_VAL_TABLE)
-            await self._db.commit()
+            async with self._db.atomic():
+                await self._db.execute_one(self.KEY_VAL_TABLE)
+                await self._db.commit()
             yield self
             await self.close()
 
@@ -359,6 +360,7 @@ class Client(AsyncContextManagerMixin, Generic[T]):
                 "DELETE FROM keyval WHERE key=?",
                 (self.__build_key(key, namespace),),
             )
+            await self._db.commit()
 
     async def expire_all(self) -> None:
         """Removes everything that has passed it's expiration date."""
@@ -395,8 +397,9 @@ class Client(AsyncContextManagerMixin, Generic[T]):
         """
         async with self._db.atomic():
             await self._db.execute_one("DROP TABLE IF EXISTS keyval;")
-
-
+        async with self._db.atomic():
+            await self._db.execute_one(self.KEY_VAL_TABLE)
+            await self._db.commit()
 
 
 @overload

@@ -13,9 +13,17 @@ dependencies = [
     "msgspec>=0.21.1",
 ]
 
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.dynamic]
+version = {attr = "keyspec.__version__"}
+
 [build-system]
-requires = ["uv_build>=0.11.21,<0.12.0"]
-build-backend = "uv_build"
+requires = ["setuptools"]
+
+[project.urls]
+    repository = "https://github.com/Vizonex/keyspec.git"
 
 [tool.ruff]
 line-length = 79

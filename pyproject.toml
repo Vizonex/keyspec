@@ -1,0 +1,39 @@
+[project]
+name = "keyspec"
+version = "0.1.0"
+description = "a simplistic asynchronous memory cache library for use with msgspec dataclasses"
+readme = "README.md"
+authors = [
+    { name = "Vizonex", email = "VizonexBusiness@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "anyio>=4.14.0",
+    "anyio-cysqlite>=0.2.0",
+    "msgspec>=0.21.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.21,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 79
+target-version = "py310"
+exclude = [
+    ".git",
+    ".ruff_cache",
+    ".venv",
+    ".vscode",
+    "tools", # excludes upgrade_pythoncapi.py
+    "__trashbin__" # my wonderful ideas location that aren't in use yet.
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "RUF", # Ruff-specific rules
+    "W",   # pycodestyle warnings
+]

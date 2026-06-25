@@ -75,7 +75,7 @@ This just gets rid of another annoyance I had all together.
 
 - It doesn't take much practice at all to get used to using the library, even a beginner 
 with a bit of knowlege on how anyio works could figure this out just fine. If you need 
-something quick, dirty, or lazy, look no further than the `cache` function provided just for you that automatically opens and closes the database with the use of a single async function wrapper, you can event set it as a variable ex: a factory attribute to save a bit of precious time and productivity (This was the ultimate goal after all...).
+something quick, dirty, or lazy, look no further than the `cache` function provided just for you that automatically opens and closes the database with the use of a single async function wrapper, you can even set the cache as a variable to wrap. For example: a factory attribute to save a bit of precious time and productivity (This was the ultimate goal after all...).
 
 - You get anyio support which means it will run on trio and asyncio eventloops.
 

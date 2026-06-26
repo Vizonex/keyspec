@@ -5,6 +5,11 @@
 
 A msgspec-like database system for python inspired by aiocache.
 
+## Installation
+```
+pip install keyspec
+```
+
 ## Common Usage
 ```python
 from msgspec import Struct

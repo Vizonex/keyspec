@@ -1,7 +1,7 @@
 [project]
 name = "keyspec"
 dynamic = ["version"]
-description = "a simplistic asynchronous memory cache library for use with msgspec dataclasses"
+description = "A simplistic asynchronous memory cache & database library for use with msgspec dataclasses"
 readme = "README.md"
 authors = [
     { name = "Vizonex", email = "VizonexBusiness@gmail.com" }

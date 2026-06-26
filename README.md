@@ -24,7 +24,7 @@ factory = cache(
 
 
 @factory
-async def instert(client: Client[User], username: str, password: str) -> None:
+async def insert(client: Client[User], username: str, password: str) -> None:
     await client.set(username, User(username, password))
 
 # The less lazy option is to do this.
@@ -44,8 +44,8 @@ async def get_all(client: Client[User]) -> dict[str, User]:
 async def test():
     # NOTE: Client is deleted as the factory takes care of
     # the first attribute for you...
-    await instert("user", "pass")
-    await instert("user1", "password")
+    await insert("user", "pass")
+    await insert("user1", "password")
     data = await get_all()
     # {
     #   'user': User(name='user', password='pass'),

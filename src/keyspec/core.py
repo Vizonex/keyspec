@@ -41,10 +41,11 @@ class Client(AsyncContextManagerMixin, Generic[T]):
     # deprecation let's hope it remains that way...
     KEY_VAL_TABLE = (
         "CREATE TABLE IF NOT EXISTS keyval "
-        "(id INTEGER PRIMARY KEY, "
+        "(id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "key TEXT UNIQUE, "
         "content BLOB, "
-        "ttl DATETIME)"
+        "ttl DATETIME,"
+        "count INTEGER NOT NULL DEFAULT 0)"
     )
 
     __slots__ = (
@@ -216,12 +217,10 @@ class Client(AsyncContextManagerMixin, Generic[T]):
         self.__build_key = key_builder or self._build_key
         self._auto_expire = auto_expire
 
-
     @property
     def default_namespace(self) -> str | None:
         """the default namespace, if provided to the client."""
         return self._namespace
-
 
     # Based off aiocache but there is now typehinting, your welcome :)
     def _build_key(self, key: str, namespace: str | None = None):
@@ -255,8 +254,11 @@ class Client(AsyncContextManagerMixin, Generic[T]):
             async with self._db.atomic():
                 await self._db.execute_one(self.KEY_VAL_TABLE)
                 await self._db.commit()
+
             yield self
-            await self.close()
+
+            if self._auto_expire:
+                await self.expire()
 
     async def close(self) -> None:
         """Performs closure and checks if auto-expire is set.
@@ -397,9 +399,45 @@ class Client(AsyncContextManagerMixin, Generic[T]):
         """
         async with self._db.atomic():
             await self._db.execute_one("DROP TABLE IF EXISTS keyval;")
-        async with self._db.atomic():
             await self._db.execute_one(self.KEY_VAL_TABLE)
             await self._db.commit()
+
+    # Inspired by aiomcache, normal use-cases include handling quotas
+    # or ratelimits.
+    async def incr(self, key: str, namespace: str | None = None) -> int | None:
+        """
+        increments entry's counter.
+        :param key: the key to search for.
+        :param namespace: the namespace of the entry being looked up.
+        :returns: the counter + 1 if key exists otherwise this is `None`
+
+        """
+        async with self._db.atomic():
+            if row := await self._db.execute_one(
+                "UPDATE keyval SET count = count + 1 WHERE key=?"
+                " RETURNING count",
+                (self.__build_key(key, namespace),),
+            ):
+                return row[0]
+
+    async def decr(self, key: str, namespace: str | None = None) -> int | None:
+        """
+        decrements entry's counter.
+        :param key: the key to search for.
+        :param namespace: the namespace of the entry being looked up.
+        :returns: the counter - 1 if key exists and is not 0
+            otherwise this is `None`
+
+        """
+        async with self._db.atomic():
+            if row := await self._db.execute_one(
+                "UPDATE keyval SET count = count - 1 WHERE key=?"
+                " AND count > 0 RETURNING count",
+                (self.__build_key(key, namespace),),
+            ):
+                # if row[0] == 0 returns None
+                # this may be confusing to some but it does work.
+                return row[0] or None
 
 
 @overload
@@ -466,6 +504,7 @@ def cache(
     [Callable[Concatenate[Client[T], P], Coroutine[Any, Any, R]]],
     Callable[P, Coroutine[Any, Any, R]],
 ]: ...
+
 
 def cache(
     database: str | Path,

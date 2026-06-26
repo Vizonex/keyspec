@@ -29,9 +29,11 @@ async def get(client: Client[User], username: str) -> User | None:
 async def get_all(client: Client[User]) -> dict[str, User]:
     return await client.get_all()
 
+
 @factory
 async def wipe(client: Client[User]) -> None:
     await client.wipe()
+
 
 @pytest.mark.anyio
 async def test_example() -> None:
@@ -39,11 +41,9 @@ async def test_example() -> None:
     await instert("user1", "password")
     data = await get_all()
 
-    assert data['user'] == User(name='user', password='pass')
-    assert data["user1"] == User(name='user1', password='password')
+    assert data["user"] == User(name="user", password="pass")
+    assert data["user1"] == User(name="user1", password="password")
     await wipe()
 
     a = await get_all()
     assert not a
-
-

@@ -1,4 +1,8 @@
 # keyspec
+[![PyPI version](https://badge.fury.io/py/keyspec.svg)](https://badge.fury.io/py/keyspec)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/keyspec)](https://pypi.org/project/keyspec)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache-yellow.svg)](https://opensource.org/licenses/Apache-2-0)
+
 A msgspec-like database system for python inspired by aiocache.
 
 ## Common Usage

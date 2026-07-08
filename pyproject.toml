@@ -9,12 +9,13 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "anyio>=4.14.0",
-    "anyio-cysqlite>=0.2.0",
     "msgspec>=0.21.1",
 ]
 
 [project.optional-dependencies]
 test = ["pytest"]
+cysqlite = ["anyio-cysqlite>=0.2.0"]
+sqlite = ["sqlite-anyio>=0.3.0"]
 
 [tool.setuptools.dynamic]
 version = {attr = "keyspec.__version__"}

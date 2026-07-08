@@ -1,7 +1,7 @@
 import anyio
 import pytest
 
-from keyspec import Client
+from keyspec.legacy import Client
 
 
 @pytest.mark.anyio

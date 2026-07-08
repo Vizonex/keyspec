@@ -1,7 +1,7 @@
 import pytest
 from msgspec import Struct
 
-from keyspec import Client, cache
+from keyspec.legacy import Client, cache
 
 
 class User(Struct):
@@ -10,7 +10,7 @@ class User(Struct):
 
 
 factory = cache(
-    "data.db",
+    "legacy-data.db",
     User,
 )
 

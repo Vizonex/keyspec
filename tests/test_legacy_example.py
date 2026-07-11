@@ -1,7 +1,9 @@
+import os
+
 import pytest
 from msgspec import Struct
 
-from keyspec import Client, cache
+from keyspec.legacy import Client, cache
 
 
 class User(Struct):
@@ -10,10 +12,15 @@ class User(Struct):
 
 
 factory = cache(
-    "data.db",
+    "legacy-data.db",
     User,
 )
 
+
+@pytest.fixture
+def life_cycle():
+    yield
+    os.remove("legacy-data.db")
 
 @factory
 async def insert(client: Client[User], username: str, password: str) -> None:
@@ -36,7 +43,7 @@ async def wipe(client: Client[User]) -> None:
 
 
 @pytest.mark.anyio
-async def test_example() -> None:
+async def test_example(life_cycle) -> None:
     await insert("user", "pass")
     await insert("user1", "password")
     data = await get_all()

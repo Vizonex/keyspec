@@ -25,6 +25,7 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import Self  # pragma: nocover
 
+
 T = TypeVar("T")
 D = TypeVar("D")
 # used for making mini-wrappers.

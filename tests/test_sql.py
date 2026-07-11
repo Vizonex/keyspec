@@ -27,4 +27,11 @@ async def test_example(user_db: BaseSqlite[User]) -> None:
     assert data["user"] == User(name="user", password="pass")
     assert data["user1"] == User(name="user1", password="password")
 
+@pytest.mark.anyio
+async def test_namespaces(user_db: BaseSqlite[User]) -> None:
+
+    await user_db["namespace"].set("user", User("user", "pass"))
+    user = await user_db["namespace"].get("user")
+    assert user.password == "pass"
+
 

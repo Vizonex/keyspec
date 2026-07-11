@@ -36,7 +36,8 @@ class DB(BaseSqlite[T]):
         # __autocommit isn't needed since were just grabbing data.
         async with await self._db.cursor() as cursor:
             async with await cursor.execute(sql, params) as cursor:
-                for row in await cursor.fetchmany(cursor.rowcount):
+                # XXX: Nasty little annoyance with iterators.
+                for row in cursor._real_cursor:
                     yield (row[0], self.decode(row[1]))
 
     async def execute_one(self, sql: str, params: Any = ()) -> T | None:

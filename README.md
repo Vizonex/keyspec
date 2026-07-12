@@ -6,49 +6,77 @@
 A msgspec-like database system for python inspired by aiocache.
 
 ## Installation
+Currently there are 2 different extensions to use those being `cysqlite` and `sqlite` backends.
+More backends are being planned in a future release such as `lmdb`.
+
+## Cysqlite implementation
 ```
-pip install keyspec
+pip install keyspec[cysqlite]
 ```
 
-## Common Usage
+## Sqlite implementation
+```
+pip install keyspec[sqlite]
+```
+
+## LMBD implementation
+Coming soon...
+
+
+# Common Usage
+Using the database system and finding the implementation you want should be very easy to figure out.
+in this example below we use `cysqlite` which has slightly better performance than `sqlite` the
+sqlite version can be utilized for support with the standard python libraries if dependencies are 
+more of a concern to your needs.
 ```python
-from msgspec import Struct
+import anyio
+from msgspec import Struct, msgpack
 
-from keyspec import Client, cache
+from keyspec.cysqlite import Database
 
-# Create your msgspec Structure, Attrs dataclass or etc...
+
 class User(Struct):
     name: str
     password: str
 
-# you can get pretty lazy if needed.
-factory = cache(
-    "data.db",
-    User,
-)
+# you can specify either a type or a msgspec decoder of your choice.
+database = Database("my_database.db", User)
+...
+# Alternative approch if custom decoders are needed.
+database = Database("my_database.db", dec=msgpack.Decoder(User))
 
 
-@factory
-async def insert(client: Client[User], username: str, password: str) -> None:
-    await client.set(username, User(username, password))
+# you can wrap a database as needed or using async with
+@database()
+async def insert(user_db: Database[User], username:str, password: str) -> None:
+    await user_db.set("user", User(username, password))
+    return await user_db.get_all()
 
-# The less lazy option is to do this.
-@cache(
-    "data.db",
-    User,
-)
-async def get(client: Client[User], username: str) -> User | None:
-    return await client.get(username)
+async def async_with_insert(username:str, password: str) -> None:
+    async with  Database("my_database.db", User) as user_db:
+        await user_db.set("user", User(username, password))
+        return await user_db.get_all()
+
+async def async_with_insert_alternative_method(username:str, password: str) -> None:
+    async with database as user_db:
+        await user_db.set("user", User(username, password))
+        return await user_db.get_all()
+
+@database()
+async def namespaces(user_db: Database[User]) -> User | None:
+    # namespaces can also be set just like how it's done in redis.
+    await user_db["namespace"].set("user", User("user", "pass"))
+    return await user_db["namespace"].get("user")
 
 
-@factory
-async def get_all(client: Client[User]) -> dict[str, User]:
-    return await client.get_all()
-
+@database()
+async def get_all(user_db: Database[User]) -> dict[str, User]:
+    return await user_db.get_all()
 
 async def test():
-    # NOTE: Client is deleted as the factory takes care of
-    # the first attribute for you...
+    # NOTE: Client is deleted as the wrapper cane take care of
+    # the first attribute for you making the database wrapper 
+    # an easy to use shortcut to access your newly made database.
     await insert("user", "pass")
     await insert("user1", "password")
     data = await get_all()
@@ -58,38 +86,72 @@ async def test():
     # }
     print(data)
 
-
 if __name__ == "__main__":
-    import anyio
-
     anyio.run(test)
+
 ```
 
+## Expirable Data
+Because sometimes we just want to implement a cache system
+and recycle the unused data later.
+A Good example is preventing bots from just mixing in with 
+our users.
+
+```python
+from msgspec import Struct
+from keyspec.sqlite import Database
+from datetime import timedelta
+
+class Captcha(Struct):
+    answer: str
+
+# Time to Live and expirable systems are also accepted
+captcha_db = Database("captchas.db", Captcha, default_ttl=60) # 60 seconds
+captcha_db = Database("captchas.db", Captcha, default_ttl=timedelta(hours=1)) # 1 hour
+# Data automatically will expire upon exiting the
+# function or context manager being entered otherwise you can use auto_expire=False to set
+# your own rules on how data should be expired
+captcha_db = Database(
+    "captchas.db",
+    Captcha, default_ttl=timedelta(hours=1), auto_expire=True
+)
+```
+
+
 ## Why I wrote it.
-- Msgspec doesn't work as a sqlalchemy table on it's own 
-and therefore there can't be any real competitor with SQLModel and why write a class object twice, it's unnessesary. the reason for this is that sqlalchemy can't make use of `__slots__`. 
-This was an alternative approch in the longrun that at least gives msgspec some form of database functionality.
+-   Msgspec doesn't work as an __sqlalchemy__ table on it's own 
+    and therefore there can't be any real competitor with __SQLModel__ and why write a class object twice, it's unnessesary. 
+    the reason for this is that __sqlalchemy__ can't make use of `__slots__`. This was an alternative approch in the longrun that 
+    at least gives msgspec some form of database functionality.
 
-- Windows doesn't have a saveable cache system with redis as far as I am aware
-so I gave it cysqlite and anyio to at least make up for that. 
-As someone who hates OS-Gating, giving a proper database system for windows/linux and Apple devices was a priority for me.
+-   Keyspec is smaller than __sqlalchemy__ and is made in a redis-like format. Know however there is a disadvantage as
+    only single key lookups can be done, so choose your keys wisely, the best choice by far is the name or id of 
+    the object you wish to serlize and deserlize out of your database.
 
-- I was requested by the aio-libs team that if there was another cache extension 
-library it would have to be put somewhere else. So I ended up just making my own cache-like
-database with a better system to utilize. This one uses msgpack to help with the speed of 
-decoding the objects however, I may add a feature that allows for json to be used instead. (This may lead to a new subclassable wrapper system and a new cache wrapper).
+-   Keyspec gives the user a lot of creativity right out of the box.
 
-- Compared to aiocache the `set` function adds or updates rather than one or the other. 
-This just gets rid of another annoyance I had all together.
+-   Windows doesn't have a saveable cache system with redis as far as I am aware
+    so I gave it cysqlite and anyio to at least make up for that. 
+    As someone who hates OS-Gating, giving a proper database system for windows/linux and Apple devices was a priority for me.
 
-- It doesn't take much practice at all to get used to using the library, even a beginner 
-with a bit of knowlege on how anyio works could figure this out just fine. If you need 
-something quick, dirty, or lazy, look no further than the `cache` function provided just for you that automatically opens and closes the database with the use of a single async function wrapper, you can even set the cache as a variable to wrap. For example: a factory attribute to save a bit of precious time and productivity (This was the ultimate goal after all...).
+-   I was requested by the aio-libs team that if there was another cache extension 
+    library, it would have to be put somewhere else. So I ended up just making my own cache-like
+    database with a better system to utilize. It has extensions if you want to build your own database.
 
-- You get anyio support which means it will run on trio and asyncio eventloops.
+-   Anyio is a better choice as you automatically can support both `trio` and `asyncio` and any server implementation under the sun,
+    however __aiohttp__ may require a bit of setup as you need to serlize the data to the format the client may be requesting for 
+    and __aiohttp__ doesn't support trio unless you use the trio eventloop library.
 
-- Cysqlite is regularly updated and maintained alongside it's companion library anyio-cysqlite which is written by me, the same author of this library.
+-   You can automatically pair litestar with keyspec with the best results however `fastapi`
+    may require a bit of work to get data to be streamed correctly.
 
-- With anyio support, it is possible to use this library with litestar which has support for msgsepc by default. Examples may include captchas (with the use of a decently timed ttl) or user accounts by given name (recommended). TOTP tools for 2fa logins might also be a good one. The possibilities are endless.
+-   Compared to aiocache the `set` function adds or updates rather than one or the other. 
+    This just gets rid of another annoyance I had all together.
+
+-   It doesn't take much practice at all to get used to using the library even a less skilled
+    programmer could pick up this library with a little bit of paitience.
+
+-   Cysqlite extension is regularly updated and maintained alongside it's companion library __anyio-cysqlite__ which is written by me, 
+    the same author of this library.
 
 

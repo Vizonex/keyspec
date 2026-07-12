@@ -178,6 +178,7 @@ class BaseDBM(ABC, Generic[T]):
 
     def __init__(
         self,
+        type: T | None = None,
         dec: AbstractDecoder[T] | None = None,
         enc: AbstractEncoder | None = None,
         default_ttl: float | timedelta | None = None,
@@ -185,7 +186,13 @@ class BaseDBM(ABC, Generic[T]):
         delim: str = ".",
         **kw,
     ) -> None:
-        self._dec: AbstractDecoder = dec or msgpack.Decoder()
+        if type and dec:
+            raise TypeError(
+                "type and dec (decoder) cannot be defined at the same time"
+            )
+        self._dec: AbstractDecoder = dec or (
+            msgpack.Decoder() if not type else msgpack.Decoder(type)
+        )
         self._enc: AbstractEncoder = enc or msgpack.Encoder()
         self._default_ttl = default_ttl
         self._auto_expire = auto_expire
@@ -341,3 +348,5 @@ class BaseDBM(ABC, Generic[T]):
             return wrapper
 
         return decorator
+
+    __call__ = wrap

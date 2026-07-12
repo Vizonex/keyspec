@@ -25,6 +25,10 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import Self  # pragma: nocover
 
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
 
 T = TypeVar("T")
 D = TypeVar("D")
@@ -32,7 +36,14 @@ D = TypeVar("D")
 P = ParamSpec("P")
 R = TypeVar("R")
 
+legacy_items_deprecated = deprecated(
+    "better implementation of legacy keyspec exits and is "
+    "expandable with other sql libaries and implementations "
+    "This keyspec.legacy module is planned for removal in 1.3.0"
+)
 
+
+@legacy_items_deprecated
 class Client(AsyncContextManagerMixin, Generic[T]):
     """A Client Connection inspired by aiocache that uses anyio, cysqlite and
     msgsepc to create and handle type-hintable and fast simplic key & value
@@ -441,6 +452,7 @@ class Client(AsyncContextManagerMixin, Generic[T]):
                 return row[0] or None
 
 
+@legacy_items_deprecated
 @overload
 def cache(
     database: str | Path,
@@ -474,6 +486,7 @@ def cache(
 ]: ...
 
 
+@legacy_items_deprecated
 @overload
 def cache(
     database: str | Path,
@@ -507,6 +520,7 @@ def cache(
 ]: ...
 
 
+@legacy_items_deprecated
 def cache(
     database: str | Path,
     type: type[T] | None = None,

@@ -7,7 +7,7 @@ from .base import T
 from .sqlite_base import KEYVAL_CREATE_TABLE, BaseSqlite, touch
 
 
-class DB(BaseSqlite[T]):
+class Database(BaseSqlite[T]):
     """A Cysqlite Database implemented with anyio-cysqlite."""
 
     async def connect(self) -> None:
@@ -21,7 +21,7 @@ class DB(BaseSqlite[T]):
         async with self._db.atomic():
             async with await self._db.execute(sql, params) as cursor:
                 async for row in cursor:
-                    yield (row['key'], self.decode(row['value']))
+                    yield (row["key"], self.decode(row["value"]))
 
     async def execute_one(self, sql: str, params: Any = ()) -> T | None:
         async with self._db.atomic():
@@ -47,4 +47,3 @@ class DB(BaseSqlite[T]):
         await self._db.close()
         # Cleanup for next run.
         self._db = None
-

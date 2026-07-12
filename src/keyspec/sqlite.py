@@ -1,16 +1,38 @@
 import sqlite3
+from collections import deque
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
 from typing import Any
 
-from sqlite_anyio import Connection, connect
+from sqlite_anyio import Connection, Cursor, connect
 
 from .base import T
 from .sqlite_base import KEYVAL_CREATE_TABLE, BaseSqlite, touch
 
 
-class DB(BaseSqlite[T]):
+# XXX Sqlite-Anyio doesn't support __aiter__ yet
+# so here is a fancy little shortcut.
+class _CusorIter:
+    __slots__ = ("__weakref__", "_buffer", "_cursor")
+
+    def __init__(self, cursor: Cursor) -> None:
+        self._cursor = cursor
+        self._buffer = deque()
+
+    async def __anext__(self):
+        if not self._buffer:
+            self._buffer.extend(await self._cursor.fetchmany(100))
+            if not self._buffer:
+                raise StopAsyncIteration
+        return self._buffer.popleft()
+
+    def __aiter__(self):
+        return self
+
+
+class Database(BaseSqlite[T]):
     """A Database implemented with sqlite-anyio"""
+
     @asynccontextmanager
     async def __autocommit(self):
         async with await self._db.cursor() as cursor:
@@ -37,7 +59,7 @@ class DB(BaseSqlite[T]):
         async with await self._db.cursor() as cursor:
             async with await cursor.execute(sql, params) as cursor:
                 # XXX: Nasty little annoyance with iterators.
-                for row in cursor._real_cursor:
+                async for row in _CusorIter(cursor):
                     yield (row[0], self.decode(row[1]))
 
     async def execute_one(self, sql: str, params: Any = ()) -> T | None:
@@ -66,4 +88,3 @@ class DB(BaseSqlite[T]):
         await self._db.close()
         # Cleanup for next run.
         self._db = None
-

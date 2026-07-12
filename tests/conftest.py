@@ -33,23 +33,22 @@ if has_module("trio"):
 DB_PARAMS: list[type[BaseDBM]] = []
 
 if has_module("anyio_cysqlite"):
-    from keyspec.cysqlite import DB
-    DB_PARAMS.append(pytest.param(DB, id="cysqlite"))
+    from keyspec.cysqlite import Database
+
+    DB_PARAMS.append(pytest.param(Database, id="cysqlite"))
 
 
 if has_module("sqlite_anyio"):
-    from keyspec.sqlite import DB
-    DB_PARAMS.append(pytest.param(DB, id="sqlite3"))
+    from keyspec.sqlite import Database
+
+    DB_PARAMS.append(pytest.param(Database, id="sqlite3"))
 
 
 @pytest.fixture(params=PARAMS)
 def anyio_backend(request: pytest.FixtureRequest) -> Any:
     return request.param
 
+
 @pytest.fixture(params=DB_PARAMS)
 async def dbm(request: pytest.FixtureRequest) -> type[BaseDBM]:
     return request.param
-
-
-
-

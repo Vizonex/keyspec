@@ -78,13 +78,14 @@ class BaseSqlite(BaseDBM[T]):
     def __init__(
         self,
         path: str | bytes | Path,
+        type: T | None = None,
         dec: AbstractDecoder[T] | None = None,
         enc: AbstractEncoder | None = None,
         default_ttl: float | timedelta | None = None,
         auto_expire: bool = True,
         delim: str = ".",
     ):
-        super().__init__(dec, enc, default_ttl, auto_expire, delim)
+        super().__init__(type, dec, enc, default_ttl, auto_expire, delim)
 
         self._path = os.fsdecode(path)
         self._db = None
@@ -139,9 +140,9 @@ class BaseSqlite(BaseDBM[T]):
         now = self.now()
         if key:
             return await self._db.execute(
-                    KEYVAL_EXPIRE_LIKE,
-                    (now, f"%{key}"),
-                )
+                KEYVAL_EXPIRE_LIKE,
+                (now, f"%{key}"),
+            )
         else:
             await self.expire_all()
 

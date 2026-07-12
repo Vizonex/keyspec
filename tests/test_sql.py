@@ -2,7 +2,6 @@ import os
 
 import pytest
 from msgspec import Struct
-from msgspec.msgpack import Decoder
 
 from keyspec.sqlite_base import BaseSqlite
 
@@ -11,11 +10,13 @@ class User(Struct):
     name: str
     password: str
 
+
 @pytest.fixture
 async def user_db(dbm: type[BaseSqlite[User]]):
-    async with dbm("data.db", dec=Decoder(User)) as db:
+    async with dbm("data.db", User) as db:
         yield db
     os.remove("data.db")
+
 
 @pytest.mark.anyio
 async def test_example(user_db: BaseSqlite[User]) -> None:
@@ -27,6 +28,7 @@ async def test_example(user_db: BaseSqlite[User]) -> None:
     assert data["user"] == User(name="user", password="pass")
     assert data["user1"] == User(name="user1", password="password")
 
+
 @pytest.mark.anyio
 async def test_namespaces(user_db: BaseSqlite[User]) -> None:
 
@@ -35,3 +37,9 @@ async def test_namespaces(user_db: BaseSqlite[User]) -> None:
     assert user.password == "pass"
 
 
+@pytest.mark.anyio
+async def test_aiter(user_db: BaseSqlite[User]):
+    await user_db.set("user", User("user", "pass"))
+    await user_db.set("user1", User("user1", "password"))
+    async for n, s in user_db.get_iter():
+        assert n == s.name

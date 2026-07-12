@@ -19,7 +19,7 @@ pip install keyspec[cysqlite]
 pip install keyspec[sqlite]
 ```
 
-## LMBD implementation
+## LMDB implementation
 Coming soon...
 
 

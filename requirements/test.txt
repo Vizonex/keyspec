@@ -3,5 +3,5 @@ winloop==0.6.3; platform_system == "Windows"
 uvloop; platform_system != "Windows"
 trio==0.33.0
 anyio-cysqlite==0.2.0
-sqlite-anyio==0.3.1
+sqlite-anyio==0.3.2
 -e .
